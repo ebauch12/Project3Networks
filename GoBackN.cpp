@@ -1,4 +1,7 @@
 #include "includes.h"
+#include <vector>
+
+std::vector<pkt> uninitialized;
 
 // ***************************************************************************
 // * ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
@@ -11,6 +14,7 @@
 // * entity A routines are called. You can use it to do any initialization
 // ***************************************************************************
 void A_init() {
+    // std::vector<pkt> uninitialized(0); //initialize here?
 }
 
 // ***************************************************************************
@@ -18,6 +22,7 @@ void A_init() {
 // * entity B routines are called. You can use it to do any initialization
 // ***************************************************************************
 void B_init() {
+    // std::vector<pkt> uninitializedB = 0;
 }
 
 // ***************************************************************************
@@ -26,8 +31,24 @@ void B_init() {
 bool rdt_sendA(struct msg message) {
     INFO << "RDT_SEND_A: Layer 4 on side A has received a message from the application that should be sent to side B: "
               << message << ENDL;
+    pkt newPkt = pkt();
+    newPkt.seqnum = 0;
+    newPkt.acknum = 0;
+    newPkt.checksum = 0;
+    bool accepted = true;
 
-    bool accepted = false;
+    //possible error: not adding packet even though size is greater than 10
+    // processing 10 at a time because of buffer?
+    if (uninitialized.size() < 10) {
+           uninitialized.push_back(newPkt);
+           simulation->udt_send(A, newPkt);
+    }
+    else {
+        accepted = false;
+        //print out error, try again later?
+    }
+ 
+     
 
     return (accepted);
 }
@@ -59,7 +80,10 @@ bool rdt_sendB(struct msg message) {
 void rdt_rcvB(struct pkt packet) {
     INFO << "RTD_RCV_B: Layer 4 on side B has received a packet from layer 3 sent over the network from side A:"
          << packet << ENDL;
-
+    msg newMsg = msg();
+    char data [20];
+    std::memcpy(packet.payload,data,20);
+    simulation->deliver_data(B, newMsg);
 }
 
 // ***************************************************************************
@@ -74,4 +98,8 @@ void A_timeout() {
 // ***************************************************************************
 void B_timeout() {
     INFO << "B_TIMEOUT: Side B's timer has gone off." << ENDL;
+}
+
+bool checksum(uint16_t checksumA, uint16_t checksumB) {
+    return checkSumA == checkSumB;
 }
